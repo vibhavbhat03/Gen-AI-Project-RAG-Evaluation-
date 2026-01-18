@@ -65,3 +65,96 @@ This repository contains a “digital twin” that generates Chubbyemu-inspired 
 ## Repository Structure
 The notebook generates and uses the following layout:
 
+---
+
+## Data Requirements
+
+### 1) Style JSON (expected format)
+Put transcript JSON files in `data/style_json/`. Each file should contain transcript segments with at least:
+- `text` (and optionally `start`, `duration`)
+
+The pipeline can construct a combined transcript if needed.
+
+### 2) Facts PDFs
+Put one or more PDFs in `data/facts_pdfs/`. These are extracted to text, chunked, embedded, and retrieved to support citation-based grounding.
+
+---
+
+## Setup
+
+### Install dependencies
+You can run this in Colab or locally in a virtual environment. Typical dependencies:
+- `google-generativeai`
+- `sentence-transformers`
+- `faiss-cpu`
+- `PyMuPDF`, `pdfplumber`
+- `tiktoken`
+- `numpy`, `pandas`, `matplotlib`, `scipy`, `scikit-learn`
+
+### Configure API key (Gemini)
+Do **not** hardcode keys or commit them to GitHub.
+
+Set an environment variable:
+- macOS/Linux:
+  - `export GOOGLE_API_KEY="YOUR_KEY"`
+- Windows:
+  - `setx GOOGLE_API_KEY "YOUR_KEY"`
+
+Then read it in code:
+- `GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")`
+
+---
+
+## How to Run
+1. Add your data:
+   - transcript JSON → `data/style_json/`
+   - medical PDFs → `data/facts_pdfs/`
+2. Open `Trial_Modified.ipynb` and run cells top-to-bottom.
+3. The notebook will:
+   - build chunks, embeddings, and FAISS indices
+   - generate baseline + RAG outputs for multiple modes
+   - run evaluation and export results to `eval/`
+
+---
+
+## Evaluation: What I Measure
+### Style fidelity
+- Narrative marker scoring (hooks, medical terminology explanations, tension/progression cues)
+- Embedding similarity to a style centroid
+- Sentence-structure features (short-sentence ratio, variance)
+
+### Grounding / hallucination risk (proxy)
+- Counts citations and checks citation formatting
+- Counts “medical specifics” (dosages, lab values, percentages, etc.)
+- Risk increases when specifics appear without supporting citations
+
+### LLM-as-a-judge rubric scoring
+A separate model returns JSON scores for:
+- Style match (voice, clarity, pacing, hook)
+- Factual quality (accuracy, hedging, consistency, safety)
+
+---
+
+## Outputs
+After a full run, you’ll typically get:
+- `eval/detailed_results.csv`
+- `eval/comprehensive_summary.json`
+- `eval/outputs/all_outputs.json`
+- charts under `eval/charts/`
+
+---
+
+## Notes & Limitations
+- This is **educational content**, not medical advice.
+- Retrieval quality depends heavily on the PDFs provided.
+- For production use, tighten guardrails: enforce stronger claim-to-citation alignment and refusals when evidence is missing.
+
+---
+
+## Future Work
+- Add a re-ranker (cross-encoder) or MMR for better retrieval diversity.
+- Add fine-tuning or a lightweight adapter (e.g., LoRA) for stronger style consistency.
+- Expand evaluation prompts and add human rubric scoring for validation.
+- Add safety filters and stricter medical claim verification.
+
+
